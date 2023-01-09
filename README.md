@@ -218,7 +218,7 @@ https://example.com
 
 #### Admin screen
 
-```https://example.com/admin```, ```Email address: ${LETSENCRYPT_EMAIL} and Password: ${PMA_CONTROLPASS}``` in the .env file.
+```https://example.com/admin```, ```Email address: ${LETSENCRYPT_EMAIL} and Password: ${PMA_HTPASSWD_PASSWORD}``` in the .env file.
 
 add or remove code in the ./php-fpm/php/conf.d/security.ini file for custom php.ini configurations
 
@@ -241,6 +241,8 @@ add or remove code in the ```./webserver/extra/httpd-ssl.conf``` file for custom
 
 [https://httpd.apache.org/docs/2.4/](https://httpd.apache.org/docs/2.4/)
 
+Optimize your Apache httpd configuration here(https://devdocs.prestashop-project.org/8/scale/webservers/httpd/).
+ 
 #### Database
 
 By default, PrestaShop’s database tables start with the ps_ prefix. This can be customized during installation.
