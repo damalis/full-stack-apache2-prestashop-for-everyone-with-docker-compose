@@ -210,7 +210,7 @@ docker compose up -d
 
 ### Website
 
-You should see the "Welcome! You have successfully installed the Fuel PHP Framework." page in your browser. If not, please check if your PHP installation satisfies PrestaShop's requirements.
+You should see the "PrestaShop demo site" page in your browser. If not, please check if your PHP installation satisfies PrestaShop's requirements.
 
 ```
 https://example.com
@@ -232,7 +232,7 @@ You should make changes custom host configurations ```./php-fpm/php-fpm.d/z-www.
 docker container restart prestashop
 ```
 
-add and/or remove prestashop site folders and files with any ftp client program in ```./prestashop/webapp``` folder.
+add and/or remove prestashop site folders and files with any ftp client program in ```./prestashop``` folder.
 <br />You can also visit `https://example.com` to access website after starting the containers.
 
 #### Webserver
