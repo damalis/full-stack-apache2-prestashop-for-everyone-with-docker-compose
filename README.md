@@ -216,6 +216,10 @@ You should see the "Welcome! You have successfully installed the Fuel PHP Framew
 https://example.com
 ```
 
+#### Admin screen
+
+```https://example.com/admin```, ```Email address: ${LETSENCRYPT_EMAIL}, Password: ${PMA_CONTROLPASS}``` in the .env file.
+
 add or remove code in the ./php-fpm/php/conf.d/security.ini file for custom php.ini configurations
 
 [https://www.php.net/manual/en/configuration.file.php](https://www.php.net/manual/en/configuration.file.php)
