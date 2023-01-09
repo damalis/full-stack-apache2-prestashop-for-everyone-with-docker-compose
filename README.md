@@ -218,7 +218,7 @@ https://example.com
 
 #### Admin screen
 
-```https://example.com/admin```, ```Email address: ${LETSENCRYPT_EMAIL}, Password: ${PMA_CONTROLPASS}``` in the .env file.
+```https://example.com/admin```, ```Email address: ${LETSENCRYPT_EMAIL} and Password: ${PMA_CONTROLPASS}``` in the .env file.
 
 add or remove code in the ./php-fpm/php/conf.d/security.ini file for custom php.ini configurations
 
