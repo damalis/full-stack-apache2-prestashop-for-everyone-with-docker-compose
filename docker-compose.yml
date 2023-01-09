@@ -27,8 +27,8 @@ services:
             test: ["CMD-SHELL", "curl -fk https://${DOMAIN_NAME} || exit 1"]
             interval: 10s
             timeout: 5s
-            retries: 11
-            start_period: 60s
+            retries: 10
+            start_period: 100s
         environment:
             TZ: '${LOCAL_TIMEZONE}'
         labels:            
