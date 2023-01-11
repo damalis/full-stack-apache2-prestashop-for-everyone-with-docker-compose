@@ -96,6 +96,7 @@ services:
             - backend
             - frontend
         volumes:
+            - 'phpmyadmin:${WEBSERVER_DOC_ROOT}/sql'
             - type: bind
               source: ./phpmyadmin/apache2/sites-available/default-ssl.conf
               target: '${APACHE_CONFDIR_PREFIX}/sites-available/default-ssl.conf'            
@@ -145,6 +146,7 @@ services:
             - type: bind
               source: ./database/conf.d/z-mysql.cnf
               target: '${MYSQL_CONF_PREFIX}/z-mysql.cnf'
+            - 'phpmyadmin:/docker-entrypoint-initdb.d'
         hostname: database
         restart: unless-stopped
         ports:
@@ -161,7 +163,7 @@ services:
             - "docker-volume-backup.stop-during-backup=true"
             - "docker-volume-backup.archive-pre=/bin/sh -c 'mysqldump -uroot -p${MYSQL_ROOT_PASSWORD} --all-databases > /tmp/backup/db_backup_data.sql'"
             - "docker-volume-backup.exec-label=database"
-        command: "--character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci --default-authentication-plugin=mysql_native_password"
+        command: bash -c "sed -i 's/pma_username/${PMA_CONTROLUSER}/g;s/pma_password/${PMA_CONTROLPASS}/' /docker-entrypoint-initdb.d/create_tables.sql && docker-entrypoint.sh 'mariadbd' --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci --default-authentication-plugin=mysql_native_password"
     
     backup:
         image: offen/docker-volume-backup:latest
@@ -201,6 +203,13 @@ volumes:
         name: ${DATABASE_CONT_NAME}-data
     db-backup-data:
         name: ${DATABASE_CONT_NAME}-backup-data
+    phpmyadmin:
+        name: phpmyadmin-sql
+        driver: local
+        driver_opts:
+            type: none
+            device: ${DIRECTORY_PATH}/phpmyadmin/sql
+            o: bind
     certbot-etc:
         external: true       
     certbot-var:
