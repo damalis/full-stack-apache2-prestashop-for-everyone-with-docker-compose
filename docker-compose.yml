@@ -117,10 +117,10 @@ services:
         restart: unless-stopped
         ports:
             - '9090:443'
-        #links:
-        #    - database
+        links:
+            - database
         environment:
-            #PMA_HOST: database
+            PMA_HOST: 'database'
             PMA_PMADB: 'phpmyadmin'
             PMA_CONTROLUSER: '${PMA_CONTROLUSER}'
             PMA_CONTROLPASS: '${PMA_CONTROLPASS}'
