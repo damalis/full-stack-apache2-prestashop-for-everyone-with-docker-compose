@@ -34,7 +34,7 @@ services:
         labels:            
             - 'docker-volume-backup.stop-during-backup=true'
         command: >
-            bash -c "apt-get -y update && apt-get install -y libmcrypt-dev libjpeg62-turbo-dev libpcre3-dev libpng-dev libwebp-dev libfreetype6-dev libxml2-dev libicu-dev libzip-dev wget unzip libonig-dev && rm -rf /var/lib/apt/lists/* && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp && docker-php-ext-install iconv intl pdo_mysql soap gd zip bcmath opcache && if pecl install -p -- mcrypt; then pecl install -o -f mcrypt && rm -rf /tmp/pear && docker-php-ext-enable mcrypt; fi && 
+            bash -c "apt-get -y update && apt-get install -y libmcrypt-dev libjpeg62-turbo-dev libpcre3-dev libpng-dev libwebp-dev libfreetype6-dev libxml2-dev libicu-dev libzip-dev wget unzip libonig-dev && rm -rf /var/lib/apt/lists/* && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp && docker-php-ext-install -j$(nproc) gd iconv intl pdo_mysql soap zip bcmath opcache && if pecl install -p -- mcrypt; then pecl install -o -f mcrypt && rm -rf /tmp/pear && docker-php-ext-enable mcrypt; fi && 
             if [ ! -f \"${WEBSERVER_DOC_ROOT}/index.php\" ]; then chown www-data:www-data ${WEBSERVER_DOC_ROOT} && wget -P /tmp/data-pres https://github.com/PrestaShop/PrestaShop/releases/download/8.0.1/prestashop_8.0.1.zip && unzip -q /tmp/data-pres/prestashop_8.0.1.zip -d /tmp/data-pres && unzip -q /tmp/data-pres/prestashop.zip -d ${WEBSERVER_DOC_ROOT} && chmod -R +w admin/autoupgrade app/config cache config download img mails modules override themes translations upload var && chown www-data:www-data -R admin/autoupgrade app/config cache config download img mails modules override themes translations upload var &&  
             php ./install/index_cli.php --domain=${DOMAIN_NAME} --db_server=database --db_name=${DB_NAME} --db_user=${DB_USER} --db_password=${DB_PASSWORD} --email=${LETSENCRYPT_EMAIL} --password=${PMA_HTPASSWD_PASSWORD} --prefix=${DB_TABLE_PREFIX} --ssl=1 && rm -rf install; rm -rf /tmp/data-pres; fi; grep -qe 'date.timezone = ${LOCAL_TIMEZONE}' ${PHP_INI_DIR_PREFIX}/php/conf.d/security.ini || echo 'date.timezone = ${LOCAL_TIMEZONE}' >> ${PHP_INI_DIR_PREFIX}/php/conf.d/security.ini; php-fpm"
 
@@ -96,7 +96,6 @@ services:
             - backend
             - frontend
         volumes:
-            - 'phpmyadmin:${WEBSERVER_DOC_ROOT}/sql'
             - type: bind
               source: ./phpmyadmin/apache2/sites-available/default-ssl.conf
               target: '${APACHE_CONFDIR_PREFIX}/sites-available/default-ssl.conf'            
@@ -129,7 +128,7 @@ services:
             MEMORY_LIMIT: '${PMA_MEMORY_LIMIT}'
             TZ: '${LOCAL_TIMEZONE}'
         command: >
-            bash -c "apt-get -y update && apt-get install -y gettext-base && envsubst < ${WEBSERVER_DOC_ROOT}/sql/create_tables.sql.template > ${WEBSERVER_DOC_ROOT}/sql/create_tables.sql && echo ${PMA_HTPASSWD_USERNAME}:phpmyadmin:$$( printf \"%s:%s:%s\" \"${PMA_HTPASSWD_USERNAME}\" \"phpmyadmin\" \"${PMA_HTPASSWD_PASSWORD}\" | md5sum | awk '{print $$1}' ) > ${PMA_CONF_FOLDER}/.htpasswd 
+            bash -c "echo ${PMA_HTPASSWD_USERNAME}:phpmyadmin:$$( printf \"%s:%s:%s\" \"${PMA_HTPASSWD_USERNAME}\" \"phpmyadmin\" \"${PMA_HTPASSWD_PASSWORD}\" | md5sum | awk '{print $$1}' ) > ${PMA_CONF_FOLDER}/.htpasswd 
             && printf 'AuthType Digest\\nAuthName \"phpmyadmin\"\\nAuthDigestProvider file\\nAuthUserFile ${PMA_CONF_FOLDER}/.htpasswd\\nRequire valid-user\\n' > ${WEBSERVER_DOC_ROOT}/.htaccess && a2enmod auth_digest; 
             mkdir -p ${WEBSERVER_DOC_ROOT}/../upload && chown www-data:www-data ${WEBSERVER_DOC_ROOT}/../upload && chmod a+w ${WEBSERVER_DOC_ROOT}/../upload; mkdir -p ${WEBSERVER_DOC_ROOT}/../save && chown www-data:www-data ${WEBSERVER_DOC_ROOT}/../save && chmod a+w ${WEBSERVER_DOC_ROOT}/../save; 
             grep -qxF 'ServerName 127.0.0.1' ${APACHE_CONFDIR_PREFIX}/apache2.conf || echo -e '\\nServerName 127.0.0.1' >> ${APACHE_CONFDIR_PREFIX}/apache2.conf; grep -qe 'date.timezone = ${LOCAL_TIMEZONE}' ${PHP_INI_DIR_PREFIX}/php/conf.d/security.ini || echo 'date.timezone = ${LOCAL_TIMEZONE}' >> ${PHP_INI_DIR_PREFIX}/php/conf.d/security.ini; 
@@ -146,7 +145,7 @@ services:
             - type: bind
               source: ./database/conf.d/z-mysql.cnf
               target: '${MYSQL_CONF_PREFIX}/z-mysql.cnf'
-            - 'phpmyadmin:/docker-entrypoint-initdb.d'
+            - 'phpmyadmin-sql:/docker-entrypoint-initdb.d'
         hostname: database
         restart: unless-stopped
         ports:
@@ -203,12 +202,12 @@ volumes:
         name: ${DATABASE_CONT_NAME}-data
     db-backup-data:
         name: ${DATABASE_CONT_NAME}-backup-data
-    phpmyadmin:
+    phpmyadmin-sql:
         name: phpmyadmin-sql
         driver: local
         driver_opts:
             type: none
-            device: ${DIRECTORY_PATH}/phpmyadmin/sql
+            device: ${DIRECTORY_PATH}/database/phpmyadmin/sql
             o: bind
     certbot-etc:
         external: true       
