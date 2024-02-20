@@ -4,8 +4,9 @@ services:
 
     prestashop:
         depends_on:
-            - database
-        image: '${PHP_IMAGE_NAME}'
+            database:
+                condition: service_healthy
+        image: ${PHP_IMAGE_NAME}
         container_name: prestashop
         networks:
             - backend
@@ -27,24 +28,25 @@ services:
         links:
             - database
         healthcheck:
-            test: ["CMD-SHELL", "curl -fk https://${DOMAIN_NAME} || exit 1"]
-            interval: 10s
+            test: ["CMD-SHELL", "/bin/pidof php-fpm > /dev/null || exit 1"]
+            interval: 5s
             timeout: 5s
-            retries: 10
+            retries: 1000
             start_period: 100s
         environment:
             TZ: '${LOCAL_TIMEZONE}'
-        labels:            
+        labels:
             - 'docker-volume-backup.stop-during-backup=true'
         command: >
-            bash -c "apt-get -y update && sh /tmp/packagecheck.sh 'wget unzip libonig-dev libmcrypt-dev' && curl -sSL https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions -o - | sh -s gd iconv intl pdo_mysql soap zip bcmath opcache && if pecl install -p -- mcrypt; then pecl install -o -f mcrypt && rm -rf /tmp/pear && docker-php-ext-enable mcrypt; fi && 
-            if [ ! -f \"${WEBSERVER_DOC_ROOT}/index.php\" ]; then chown www-data:www-data ${WEBSERVER_DOC_ROOT} && wget -P /tmp/data-pres https://github.com/PrestaShop/PrestaShop/releases/download/8.0.1/prestashop_8.0.1.zip && unzip -q /tmp/data-pres/prestashop_8.0.1.zip -d /tmp/data-pres && unzip -q /tmp/data-pres/prestashop.zip -d ${WEBSERVER_DOC_ROOT} && chmod -R +w admin/autoupgrade app/config cache config download img mails modules override themes translations upload var && chown www-data:www-data -R admin/autoupgrade app/config cache config download img mails modules override themes translations upload var &&  
-            php ./install/index_cli.php --domain=${DOMAIN_NAME} --db_server=database --db_name=${DB_NAME} --db_user=${DB_USER} --db_password=${DB_PASSWORD} --email=${LETSENCRYPT_EMAIL} --password=${PMA_HTPASSWD_PASSWORD} --prefix=${DB_TABLE_PREFIX} --ssl=1 && rm -rf install; rm -rf /tmp/data-pres; fi; grep -qe 'date.timezone = ${LOCAL_TIMEZONE}' ${PHP_INI_DIR_PREFIX}/php/conf.d/security.ini || echo 'date.timezone = ${LOCAL_TIMEZONE}' >> ${PHP_INI_DIR_PREFIX}/php/conf.d/security.ini; php-fpm"
+            bash -c "apt-get update && sh /tmp/packagecheck.sh 'libonig-dev libmcrypt-dev' && curl -sSL https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions -o - | sh -s gd iconv intl pdo_mysql soap zip bcmath opcache && if pecl install -p -- mcrypt; then pecl install -o -f mcrypt && rm -rf /tmp/pear && docker-php-ext-enable mcrypt; fi && 
+            if [ ! -f \"${WEBSERVER_DOC_ROOT}/config/settings.inc.php\" ]; then composer create-project prestashop/prestashop ${WEBSERVER_DOC_ROOT} && cd ${WEBSERVER_DOC_ROOT} && chmod -R +w admin/autoupgrade app/config cache config download img mails modules override themes translations upload var && chown www-data:www-data -R admin/autoupgrade app/config cache config download img mails modules override themes translations upload var && 
+            php ./install/index_cli.php --domain=${DOMAIN_NAME} --db_server=database --db_name=${DB_NAME} --db_user=${DB_USER} --db_password=${DB_PASSWORD} --email=${LETSENCRYPT_EMAIL} --password=${PMA_HTPASSWD_PASSWORD} --prefix=${DB_TABLE_PREFIX} --ssl=1; fi; 
+            grep -qe 'date.timezone = ${LOCAL_TIMEZONE}' ${PHP_INI_DIR_PREFIX}/php/conf.d/security.ini || echo 'date.timezone = ${LOCAL_TIMEZONE}' >> ${PHP_INI_DIR_PREFIX}/php/conf.d/security.ini; php-fpm"
 
     webserver:
         depends_on:
             - prestashop
-        image: 'httpd:latest'
+        image: httpd:latest
         container_name: webserver
         networks:
             - backend
@@ -72,28 +74,34 @@ services:
         environment:
             TZ: '${LOCAL_TIMEZONE}'
         command: bash -c "sh /tmp/ssl-conf.sh '${DOMAIN_NAME}' '${LETSENCRYPT_CONF_PREFIX}' '${HTTPD_PREFIX}/conf'"
-    
+
     certbot:
         depends_on:
             - webserver
-        image: certbot/certbot
+        image: certbot/certbot:latest
         container_name: certbot
         networks:
             - backend
         volumes:
             - 'certbot-etc:${LETSENCRYPT_CONF_PREFIX}'
             - 'certbot-var:/var/lib/letsencrypt'
-            - '/tmp/acme-challenge:/tmp/acme-challenge'                        
-        restart: unless-stopped        
+            - '/tmp/acme-challenge:/tmp/acme-challenge'
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD-SHELL", "test -d ${LETSENCRYPT_CONF_PREFIX}/live/${DOMAIN_NAME} || exit 1"]
+            interval: 5s
+            timeout: 5s
+            retries: 20
         environment:
             TZ: '${LOCAL_TIMEZONE}'
         entrypoint: /bin/sh -c "certbot certonly --webroot --webroot-path /tmp/acme-challenge --rsa-key-size 4096 --non-interactive --agree-tos --no-eff-email --force-renewal --email ${LETSENCRYPT_EMAIL} -d ${DOMAIN_NAME} -d www.${DOMAIN_NAME}; 
             trap exit TERM; while :; do certbot renew --dry-run; sleep 12h & wait $${!}; done;"
-    
+
     phpmyadmin:
         depends_on:
-            - certbot
-        image: phpmyadmin/phpmyadmin
+            certbot:
+                condition: service_healthy
+        image: phpmyadmin:latest
         container_name: phpmyadmin
         networks:
             - backend
@@ -101,7 +109,7 @@ services:
         volumes:
             - type: bind
               source: ./phpmyadmin/apache2/sites-available/default-ssl.conf
-              target: '${APACHE_CONFDIR_PREFIX}/sites-available/default-ssl.conf'            
+              target: '${APACHE_CONFDIR_PREFIX}/sites-available/default-ssl.conf'
             - type: bind
               source: ./phpmyadmin/apache2/ports.conf
               target: '${APACHE_CONFDIR_PREFIX}/ports.conf'
@@ -136,9 +144,9 @@ services:
             mkdir -p ${WEBSERVER_DOC_ROOT}/../upload && chown www-data:www-data ${WEBSERVER_DOC_ROOT}/../upload && chmod a+w ${WEBSERVER_DOC_ROOT}/../upload; mkdir -p ${WEBSERVER_DOC_ROOT}/../save && chown www-data:www-data ${WEBSERVER_DOC_ROOT}/../save && chmod a+w ${WEBSERVER_DOC_ROOT}/../save; 
             grep -qxF 'ServerName 127.0.0.1' ${APACHE_CONFDIR_PREFIX}/apache2.conf || echo -e '\\nServerName 127.0.0.1' >> ${APACHE_CONFDIR_PREFIX}/apache2.conf; grep -qe 'date.timezone = ${LOCAL_TIMEZONE}' ${PHP_INI_DIR_PREFIX}/php/conf.d/security.ini || echo 'date.timezone = ${LOCAL_TIMEZONE}' >> ${PHP_INI_DIR_PREFIX}/php/conf.d/security.ini; 
             a2enmod ssl && a2ensite default-ssl && a2dissite 000-default && /docker-entrypoint.sh 'apache2-foreground'"
-    
+
     database:
-        image: '${DATABASE_IMAGE_NAME}:${DATABASE_VERSION}'
+        image: ${DATABASE_IMAGE_NAME}:${DATABASE_VERSION}
         container_name: database
         networks:
             - backend
@@ -153,6 +161,11 @@ services:
         restart: unless-stopped
         ports:
             - '3306:3306'
+        healthcheck:
+            test: ["CMD-SHELL", "${DATABASE_ADMIN_COMMANDLINE} ping --silent || exit 1"]
+            interval: 5s
+            timeout: 5s
+            retries: 50
         environment:
             MYSQL_ROOT_PASSWORD: '${MYSQL_ROOT_PASSWORD}'
             MYSQL_DATABASE: '${DB_NAME}'
@@ -161,11 +174,11 @@ services:
             MYSQL_ALLOW_EMPTY_PASSWORD: 'No'
             MYSQL_ROOT_HOST: '${MYSQL_ROOT_HOST}'
             TZ: '${LOCAL_TIMEZONE}'
-        labels:            
+        labels:
             - "docker-volume-backup.stop-during-backup=true"
             - "docker-volume-backup.archive-pre=/bin/sh -c 'mysqldump -uroot -p${MYSQL_ROOT_PASSWORD} --all-databases > /tmp/backup/db_backup_data.sql'"
             - "docker-volume-backup.exec-label=database"
-        command: bash -c "apt-get -y update && apt-get install -y gettext-base && export PMA_CONTROLUSER=${PMA_CONTROLUSER} export PMA_CONTROLPASS=${PMA_CONTROLPASS} && envsubst '$$PMA_CONTROLUSER,$$PMA_CONTROLPASS' < /docker-entrypoint-initdb.d/create_tables.sql.template > /docker-entrypoint-initdb.d/create_tables.sql && docker-entrypoint.sh --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci --default-authentication-plugin=mysql_native_password"
+        command: bash -c "${DATABASE_PACKAGE_MANAGER} && export PMA_CONTROLUSER=${PMA_CONTROLUSER} export PMA_CONTROLPASS=${PMA_CONTROLPASS} && envsubst '$$PMA_CONTROLUSER,$$PMA_CONTROLPASS' < /docker-entrypoint-initdb.d/create_tables.sql.template > /docker-entrypoint-initdb.d/create_tables.sql && docker-entrypoint.sh --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci --default-authentication-plugin=${DATABASE_AUTHENTICATION_PLUGIN}"
     
     backup:
         image: offen/docker-volume-backup:latest
@@ -187,7 +200,7 @@ services:
             BACKUP_FILENAME: 'backup-%Y-%m-%dT%H-%M-%S.tar.gz'
             BACKUP_RETENTION_DAYS: '7'
             EXEC_LABEL: 'database'
-            #BACKUP_EXCLUDE_REGEXP: 'folder|folder|file|\\.log$$'    
+            #BACKUP_EXCLUDE_REGEXP: 'folder|folder|file|\\.log$$'
 
 networks:
     backend: null
@@ -213,6 +226,6 @@ volumes:
             device: ${DIRECTORY_PATH}/database/phpmyadmin/sql
             o: bind
     certbot-etc:
-        external: true       
+        external: true
     certbot-var:
         name: certbot-var
