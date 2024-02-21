@@ -287,6 +287,10 @@ VALUES
 	(3, 'cart_default', 80, 80, 1, 0, 0, 0, 0);
 ```
 
+#### If You get that error 'Problem: Feature was deprecated in doctrine/persistence 2.x and is not supported by installed doctrine/persistence:3.x'
+
+```composer remove doctrine/persistence:3.2.0``` and ```composer require doctrine/persistence:2.5.7``` at prestashop container.
+
 #### Admin screen
 
 ```https://example.com/admin```, ```Email address: ${LETSENCRYPT_EMAIL} and Password: ${PMA_HTPASSWD_PASSWORD}``` in the .env file.
