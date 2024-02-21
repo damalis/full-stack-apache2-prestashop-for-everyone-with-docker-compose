@@ -57,6 +57,10 @@ Create rules to open ports to the internet, or to a specific IPv4 address or ran
 - portainer: 9001
 - phpmyadmin: 9090
 
+#### 2 GB RAM (4 GB recommended)
+
+If you are using a system with less than 2 GB of RAM, we recommend you create a [swap file](https://www.digitalocean.com/community/tutorials/how-to-add-swap-space-on-ubuntu-20-04); otherwise, your upgrade might fail.
+
 #### Contents:
 
 - [Auto Configuration and Installation](#automatic)
@@ -266,6 +270,21 @@ You should see the "PrestaShop demo site" page in your browser. If not, please c
 
 ```
 https://example.com
+```
+
+#### If You get that error 'There is no image type defined for "products"'
+
+```
+INSERT INTO `{PREFIX}_image_type` (`id_image_type`, `name`, `width`, `height`, `products`, `categories`, `manufacturers`, `suppliers`, `stores`)
+VALUES
+	(10, 'large_banner', 960, 400, 0, 1, 0, 0, 0),
+	(9, 'product_listing', 220, 220, 1, 1, 1, 1, 0),
+	(8, 'category_default', 960, 350, 0, 1, 0, 0, 0),
+	(7, 'home_default', 250, 250, 1, 0, 0, 0, 0),
+	(6, 'large_default', 500, 500, 1, 0, 0, 0, 0),
+	(5, 'medium_default', 300, 300, 1, 1, 1, 1, 0),
+	(4, 'small_default', 125, 125, 1, 1, 1, 1, 0),
+	(3, 'cart_default', 80, 80, 1, 0, 0, 0, 0);
 ```
 
 #### Admin screen
