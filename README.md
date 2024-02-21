@@ -59,7 +59,7 @@ Create rules to open ports to the internet, or to a specific IPv4 address or ran
 
 #### 2 GB RAM (4 GB recommended)
 
-If you are using a system with less than 2 GB of RAM, we recommend you create a [swap file](https://www.digitalocean.com/community/tutorials/how-to-add-swap-space-on-ubuntu-20-04); otherwise, your upgrade might fail.
+If you are using a system with less than 2 GB of RAM, we recommend you create a [swap file](https://www.digitalocean.com/community/tutorials/how-to-add-swap-space-on-ubuntu-20-04); otherwise, your install might fail.
 
 #### Contents:
 
