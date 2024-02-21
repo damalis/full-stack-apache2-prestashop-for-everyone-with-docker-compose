@@ -44,7 +44,8 @@ services:
 
     webserver:
         depends_on:
-            - prestashop
+            prestashop:
+                condition: service_healthy
         image: httpd:latest
         container_name: webserver
         networks:
