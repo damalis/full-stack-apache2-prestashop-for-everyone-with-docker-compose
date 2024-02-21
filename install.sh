@@ -480,8 +480,6 @@ if [ -x "$(command -v docker)" ] && [ "$(docker compose version)" ]; then
 			echo ""
 			echo "completed setup"
 			echo ""
-			echo "Installing PrestaShop at prestashop container, this may take a while ... check with 'docker logs prestashop'."
-			echo ""
 			echo "Website: https://$domain_name"
 			echo "Portainer: https://$domain_name:9001"
 			echo "phpMyAdmin: https://$domain_name:9090"
