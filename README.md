@@ -317,7 +317,7 @@ add or remove code in the ```./webserver/extra/httpd-ssl.conf``` file for custom
 [https://httpd.apache.org/docs/2.4/](https://httpd.apache.org/docs/2.4/)
 
 Optimize your Apache httpd configuration [here](https://devdocs.prestashop-project.org/8/scale/webservers/httpd/).
- 
+
 #### Database
 
 By default, PrestaShop’s database tables start with the ps_ prefix. This can be customized during installation.
