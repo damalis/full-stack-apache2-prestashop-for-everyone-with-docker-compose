@@ -1,5 +1,3 @@
-version: '3.7'
-
 services:
 
     prestashop:
@@ -37,7 +35,7 @@ services:
         labels:
             - 'docker-volume-backup.stop-during-backup=true'
         command: >
-            bash -c "apt-get update && sh /tmp/packagecheck.sh 'libonig-dev libmcrypt-dev unzip' && curl -sSL https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions -o - | sh -s gd iconv intl mysqli pdo_mysql soap zip bcmath opcache imagick memcached && if pecl install -p -- mcrypt; then pecl install -o -f mcrypt && rm -rf /tmp/pear && docker-php-ext-enable mcrypt; fi && curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer && 
+            bash -c "apt-get update && sh /tmp/packagecheck.sh 'libonig-dev libmcrypt-dev zip unzip' && curl -sSL https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions -o - | sh -s gd iconv intl mysqli pdo_mysql soap zip bcmath opcache imagick memcached && if pecl install -p -- mcrypt; then pecl install -o -f mcrypt && rm -rf /tmp/pear && docker-php-ext-enable mcrypt; fi && curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer && 
             if [ ! -f \"${WEBSERVER_DOC_ROOT}/config/settings.inc.php\" ]; then rm -f ${WEBSERVER_DOC_ROOT}/README.md && composer create-project prestashop/prestashop ${WEBSERVER_DOC_ROOT} && cd ${WEBSERVER_DOC_ROOT} && chown www-data:www-data -R . && runuser -g www-data -u www-data -- php ./install-dev/index_cli.php --domain=${DOMAIN_NAME} --db_server=database --db_name=${DB_NAME} --db_user=${DB_USER} --db_password=${DB_PASSWORD} --email=${LETSENCRYPT_EMAIL} --password=${PMA_HTPASSWD_PASSWORD} --prefix=${DB_TABLE_PREFIX} --firstname=admin --lastname=admin --newsletter=0 --send_email=0 --ssl=1 && 
             mkdir -p /var/www/.npm && chown -R www-data:www-data /var/www/.npm && export NVM_DIR=/usr/local/nvm && mkdir -p $$NVM_DIR && curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && . $$NVM_DIR/nvm.sh && export NODE_VERSION=16.20.1 && nvm install $$NODE_VERSION && nvm alias default $$NODE_VERSION && nvm use default && export NODE_PATH=$$NVM_DIR/versions/node/v$$NODE_VERSION/bin && export PATH=$$PATH:$$NODE_PATH && chmod +x tools/assets/build.sh && runuser -g www-data -u www-data -- /usr/bin/make assets; else composer update --working-dir=${WEBSERVER_DOC_ROOT}; fi; 
             grep -qe 'date.timezone = ${LOCAL_TIMEZONE}' ${PHP_INI_DIR_PREFIX}/php/conf.d/security.ini || echo 'date.timezone = ${LOCAL_TIMEZONE}' >> ${PHP_INI_DIR_PREFIX}/php/conf.d/security.ini; php-fpm"
@@ -178,7 +176,7 @@ services:
             - "docker-volume-backup.stop-during-backup=true"
             - "docker-volume-backup.archive-pre=/bin/sh -c 'mysqldump -uroot -p${MYSQL_ROOT_PASSWORD} --all-databases > /tmp/backup/db_backup_data.sql'"
             - "docker-volume-backup.exec-label=database"
-        command: bash -c "${DATABASE_PACKAGE_MANAGER} && export PMA_CONTROLUSER=${PMA_CONTROLUSER} export PMA_CONTROLPASS=${PMA_CONTROLPASS} && envsubst '$$PMA_CONTROLUSER,$$PMA_CONTROLPASS' < /docker-entrypoint-initdb.d/create_tables.sql.template > /docker-entrypoint-initdb.d/create_tables.sql && docker-entrypoint.sh --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci --default-authentication-plugin=${DATABASE_AUTHENTICATION_PLUGIN}"
+        command: bash -c "${DATABASE_PACKAGE_MANAGER} && export PMA_CONTROLUSER=${PMA_CONTROLUSER} export PMA_CONTROLPASS=${PMA_CONTROLPASS} && envsubst '$$PMA_CONTROLUSER,$$PMA_CONTROLPASS' < /docker-entrypoint-initdb.d/create_tables.sql.template > /docker-entrypoint-initdb.d/create_tables.sql && docker-entrypoint.sh --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci"
     
     backup:
         image: offen/docker-volume-backup:latest
