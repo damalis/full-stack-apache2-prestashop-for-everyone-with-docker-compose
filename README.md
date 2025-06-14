@@ -284,25 +284,6 @@ You should see the "PrestaShop demo site" page in your browser. If not, please c
 https://example.com
 ```
 
-#### If You get that error 'There is no image type defined for "products"'
-
-```
-INSERT INTO `{PREFIX}_image_type` (`id_image_type`, `name`, `width`, `height`, `products`, `categories`, `manufacturers`, `suppliers`, `stores`)
-VALUES
-	(10, 'large_banner', 960, 400, 0, 1, 0, 0, 0),
-	(9, 'product_listing', 220, 220, 1, 1, 1, 1, 0),
-	(8, 'category_default', 960, 350, 0, 1, 0, 0, 0),
-	(7, 'home_default', 250, 250, 1, 0, 0, 0, 0),
-	(6, 'large_default', 500, 500, 1, 0, 0, 0, 0),
-	(5, 'medium_default', 300, 300, 1, 1, 1, 1, 0),
-	(4, 'small_default', 125, 125, 1, 1, 1, 1, 0),
-	(3, 'cart_default', 80, 80, 1, 0, 0, 0, 0);
-```
-
-#### If You get that error 'Problem: Feature was deprecated in doctrine/persistence 2.x and is not supported by installed doctrine/persistence:3.x'
-
-```composer remove doctrine/persistence:3.2.0``` and ```composer require doctrine/persistence:2.5.7``` at prestashop container.
-
 #### Admin screen
 
 ```https://example.com/admin-dev```, ```Email address: ${LETSENCRYPT_EMAIL} and Password: ${PMA_HTPASSWD_PASSWORD}``` in the .env file.
@@ -339,7 +320,7 @@ Important;
 For security reasons We strongly recommend to customize your database prefix instead of using the default one.
 Changing it will help protect your shop against any attacks (some SQL injection for example) targeting the default table names.
 
-[https://devdocs.prestashop-project.org/8/development/database/](https://devdocs.prestashop-project.org/8/development/database/)
+[https://devdocs.prestashop-project.org/9/development/database/](https://devdocs.prestashop-project.org/9/development/database/)
 
 [https://mariadb.com/kb/en/configuring-mariadb-with-option-files/](https://mariadb.com/kb/en/configuring-mariadb-with-option-files/)
 
