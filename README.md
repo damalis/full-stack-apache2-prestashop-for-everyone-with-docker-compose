@@ -309,7 +309,7 @@ add or remove code in the ```./webserver/extra/httpd-ssl.conf``` file for custom
 
 [https://httpd.apache.org/docs/2.4/](https://httpd.apache.org/docs/2.4/)
 
-Optimize your Apache httpd configuration [here](https://devdocs.prestashop-project.org/8/scale/webservers/httpd/).
+Optimize your Apache httpd configuration [here](https://devdocs.prestashop-project.org/9/scale/webservers/httpd/).
 
 #### Database
 
