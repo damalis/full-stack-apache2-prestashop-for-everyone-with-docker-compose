@@ -305,9 +305,14 @@ You should see the "PrestaShop demo site" page in your browser. If not, please c
 https://DOMAIN_NAME
 ```
 
-#### Admin screen
+```
+https://DOMAIN_NAME/admin-dev
+```
 
-```https://DOMAIN_NAME/admin-dev```, ```Email address: ${LETSENCRYPT_EMAIL} and Password: ${PMA_HTPASSWD_PASSWORD}``` in the .env file.
+```
+Username: LETSENCRYPT_EMAIL
+Password: admin123
+```
 
 add or remove code in the ./php-fpm/php/conf.d/security.ini file for custom php.ini configurations
 
