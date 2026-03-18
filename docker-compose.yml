@@ -4,7 +4,7 @@ services:
         depends_on:
             database:
                 condition: service_healthy
-        image: ${PHP_IMAGE_NAME}
+        image: prestashop/prestashop:9.0.3-fpm
         container_name: prestashop
         networks:
             - backend
@@ -16,9 +16,6 @@ services:
             - type: bind
               source: ./php-fpm/php-fpm.d/z-www.conf
               target: '${PHP_INI_DIR_PREFIX}/php-fpm.d/z-www.conf'
-            - type: bind
-              source: ./packagecheck.sh
-              target: '/tmp/packagecheck.sh'
         hostname: prestashop
         restart: unless-stopped
         ports:
@@ -31,15 +28,22 @@ services:
             timeout: 5s
             retries: 2000
         environment:
+            PS_DEMO_MODE: 1
+            DB_SERVER: database
+            DB_USER: '${DB_USER}'
+            DB_PASSWD: '${DB_PASSWORD}'
+            DB_PREFIX: '${DB_TABLE_PREFIX}'
+            DB_NAME: '${DB_NAME}'
+            PS_INSTALL_AUTO: 1
+            PS_DOMAIN: '${DOMAIN_NAME}'
+            PS_ENABLE_SSL: 1
+            PS_FOLDER_ADMIN: 'admin-dev'
+            ADMIN_MAIL: '${LETSENCRYPT_EMAIL}'
+            ADMIN_PASSWD: 'admin123'
             TZ: '${LOCAL_TIMEZONE}'
         labels:
             - 'docker-volume-backup.stop-during-backup=true'
-        command: >
-            bash -c "apt-get update && sh /tmp/packagecheck.sh 'libonig-dev libmcrypt-dev unzip' && curl -sSL https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions -o - | sh -s gd iconv intl mysqli pdo_mysql soap zip bcmath opcache imagick memcached mcrypt @composer && 
-            if [ ! -f \"${WEBSERVER_DOC_ROOT}/config/config.inc.php\" ]; then rm -f ${WEBSERVER_DOC_ROOT}/README.md && composer create-project prestashop/prestashop ${WEBSERVER_DOC_ROOT} && cd ${WEBSERVER_DOC_ROOT} && composer install && chown www-data:www-data -R . && chmod -R +w admin-dev/autoupgrade app/config cache config download img log mails modules override themes translations upload var; 
-            mkdir -p ${WEBSERVER_DOC_ROOT}/../.npm && chown -R www-data:www-data ${WEBSERVER_DOC_ROOT}/../.npm && export NVM_DIR=/usr/local/nvm && mkdir -p $$NVM_DIR && curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash && . $$NVM_DIR/nvm.sh && export NODE_VERSION=20.19.2 && nvm install $$NODE_VERSION && nvm alias default $$NODE_VERSION && nvm use default && export NODE_PATH=$$NVM_DIR/versions/node/v$$NODE_VERSION/bin && export PATH=$$PATH:$$NODE_PATH && runuser -g www-data -u www-data -- make assets && 
-            runuser -g www-data -u www-data -- php ./install-dev/index_cli.php --domain=${DOMAIN_NAME} --db_server=database --db_name=${DB_NAME} --db_user=${DB_USER} --db_password=${DB_PASSWORD} --email=${LETSENCRYPT_EMAIL} --password=${PMA_HTPASSWD_PASSWORD} --prefix=${DB_TABLE_PREFIX} --firstname=admin --lastname=admin --newsletter=0 --send_email=0 --ssl=1 --timezone=${LOCAL_TIMEZONE}; else composer update --working-dir=${WEBSERVER_DOC_ROOT}; fi; 
-            TMP=$$(mktemp) && grep -vF 'date.timezone' ${PHP_INI_DIR_PREFIX}/php/conf.d/security.ini > $$TMP && echo 'date.timezone = ${LOCAL_TIMEZONE}' >> $$TMP && cp $$TMP ${PHP_INI_DIR_PREFIX}/php/conf.d/security.ini; php-fpm"
+        command: bash -c "TMP=$$(mktemp) && grep -vF 'date.timezone' ${PHP_INI_DIR_PREFIX}/php/conf.d/security.ini > $$TMP && echo 'date.timezone = ${LOCAL_TIMEZONE}' >> $$TMP && cp $$TMP ${PHP_INI_DIR_PREFIX}/php/conf.d/security.ini; sh /tmp/docker_run.sh"
 
     webserver:
         depends_on:
